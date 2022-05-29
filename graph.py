@@ -66,11 +66,12 @@ question_to_comet_relation = {
 	}
 
 
+
 def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,scoreComputer, lhops =2, num_beams = 3):
 	context = fields["context"]
 	fields_= fields.copy()
 	context_list = [context]
-	G, gold_label, answers= init_graph(fields_,instance_reader,scoreComputer )
+	G, gold_label, answers= init_graph(fields_,instance_reader,scoreComputer,lhops )
 	#nx.draw_networkx(G,with_labels=True)
 	#plt.savefig("init.png")
 	fields_= fields.copy()
@@ -80,7 +81,7 @@ def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,score
 	predicted_label = answers.index(longest_path[-1])
 	return G, gold_label,predicted_label
 
-def init_graph(fields, instance_reader,scoreComputer):
+def init_graph(fields, instance_reader,scoreComputer, lhops):
 	G = nx.DiGraph()
 	context  = fields["context"]
 	G.add_nodes_from([context])
@@ -90,6 +91,8 @@ def init_graph(fields, instance_reader,scoreComputer):
 	G.add_nodes_from(answers)
 	for i, answer in enumerate(answers):
 		G.add_edge(context,answer, weight = scoreComputer.get_score(context_with_choice_and_clarifications[i]))
+	
+
 	return G, label, answers
 
 def extend_graph(G, fields,context_list,instance_reader,comet_model,nlp,scoreComputer, num_beams=3):
@@ -102,9 +105,11 @@ def extend_graph(G, fields,context_list,instance_reader,comet_model,nlp,scoreCom
 			fields_["clarifications"] = [clarification]
 			_, question, _, _, _, context_with_choice_and_clarifications, answers = \
 				instance_reader.fields_to_instance(fields_)
+			
 			G.add_nodes_from([clarification[1]])
 			outputs.append(clarification[1])
 			G.add_edge(context,clarification[1], weight = scoreComputer.get_score(context+clarification[1]))
+			
 			for i,answer in enumerate(answers):
 				G.add_edge(clarification[1],answer, weight = scoreComputer.get_score(context_with_choice_and_clarifications[i][0]))
 			plt.clf()

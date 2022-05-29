@@ -57,7 +57,7 @@ class ScoreComputer():
         tokenized = self.tokenizer(context_with_choice_and_clarifications, return_tensors="pt", padding=True)["input_ids"].to(self.device)
         # batch_size = BATCH_SIZE[self.lm]
         # num_batches = int(math.ceil(len(tokenized[0]) / batch_size))
-        return self.get_lm_score(tokenized, self.tokenizer.pad_token_id)
+        return 1/self.get_lm_score(tokenized, self.tokenizer.pad_token_id)
 
 def main():
     pass
