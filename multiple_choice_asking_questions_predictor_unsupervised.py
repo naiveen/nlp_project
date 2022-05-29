@@ -13,8 +13,13 @@ from torch.nn import CrossEntropyLoss
 from sklearn.metrics import accuracy_score
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from comet2.comet_model import PretrainedCometModel
+from score import ScoreComputer
 
+import warnings
+warnings.filterwarnings('ignore')
 
+import spacy
+from graph import *
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S',
                     level=logging.INFO)
@@ -29,6 +34,7 @@ BATCH_SIZE = {"distilgpt2": 64,
               "gpt2-xl": 16,
               "xlnet-base-cased": 32,
               "xlnet-large-cased": 16}
+
 
 
 class InstanceReader(object):
@@ -89,6 +95,7 @@ class SocialIQAInstanceReader(InstanceReader):
 
     @overrides
     def fields_to_instance(self, fields):
+
         context, question, label, choices, clarifications = self.to_uniform_fields(fields)
 
         answer_prefix = ""
@@ -98,9 +105,10 @@ class SocialIQAInstanceReader(InstanceReader):
                 answer_prefix = ans_prefix.replace("[SUBJ]", m.group(1))
                 break
 
-        if answer_prefix == "":
+        if answer_prefix == "": 
             answer_prefix = question.replace("?", "is")
 
+        answers = choices.copy()
         choices = [
             " ".join((answer_prefix, choice[0].lower() + choice[1:])).replace(
                 "?", "").replace("wanted to wanted to", "wanted to").replace(
@@ -112,7 +120,7 @@ class SocialIQAInstanceReader(InstanceReader):
              for context_with_clar in context_with_clarifications]
             for choice in choices]
 
-        return context, question, label, choices, clarifications, context_with_choice_and_clarifications
+        return context, question, label, choices, clarifications, context_with_choice_and_clarifications, answers
 
 
 class WinograndeInstanceReader(InstanceReader):
@@ -185,34 +193,39 @@ INSTANCE_READERS = {"socialiqa": SocialIQAInstanceReader}
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--lm", default="comet", type=str, required=False, help="language model to use")
-    parser.add_argument("--dataset_file", default=None, type=str, required=True, help="Jsonl file")
+    parser.add_argument("--file", default=None, type=str, required=True, help="Jsonl file")
+    parser.add_argument("--dataset", default="socialiqa", type=str, required=True, help="Jsonl file")
     parser.add_argument("--out_dir", default=None, type=str, required=True, help="Out directory for the predictions")
-    parser.add_argument("--device", default=-1, type=int, required=False, help="GPU device")
+    parser.add_argument("--device", default=0, type=int, required=False, help="GPU device")
 
     args = parser.parse_args()
     logger.info(args)
 
     # Load the language model
-    model, tokenizer = init_model(args.lm,args.device)#***
+    model, tokenizer = init_model(args.lm,args.device)
+    comet_model = PretrainedCometModel(device=args.device)
+
     device = torch.device(f'cuda:{args.device}') if args.device >= 0 else torch.device("cpu")
 
     # Load the dataset
-    instance_reader = INSTANCE_READERS[os.path.basename(os.path.dirname(args.dataset_file)).lower()]()
-    set_name = os.path.basename(args.dataset_file).replace(".jsonl", "")
+    instance_reader = INSTANCE_READERS[args.dataset]()
+    set_name = os.path.basename(args.file).replace(".jsonl", "")
     out_file = os.path.join(args.out_dir, f"{args.lm}_{set_name}_predictions.jsonl")
     gold = []
     predictions = []
-
-    # Predict instances
+    nlp = spacy.load('en_core_web_sm')
+    scoreComputer = ScoreComputer(comet_model)
+        # Predict instances
     with open(out_file, "w") as f_out:
-        with open(args.dataset_file) as f_in:
+        with open(args.file) as f_in:
             for line in tqdm.tqdm(f_in):
                 fields = json.loads(line.strip())
-                context, question, label, choices, clarifications, context_with_choice_and_clarifications = \
-                    instance_reader.fields_to_instance(fields)
 
-                gold.append(label)
+                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer)
+                #print(gold_label,predicted_label)
 
+                gold.append(gold_label)
+                """
                 # Tokenize and pad
                 tokenized = [tokenizer(per_clar, return_tensors="pt", padding=True)["input_ids"].to(device)
                              for per_clar in context_with_choice_and_clarifications]
@@ -232,7 +245,8 @@ def main():
 
                 prediction = int(np.argmin(per_choice_score))
                 fields["prediction"] = prediction
-                predictions.append(prediction)
+                """
+                predictions.append(predicted_label)
                 f_out.write(json.dumps(fields) + "\n")
 
         # Don't report accuracy if we don't have the labels

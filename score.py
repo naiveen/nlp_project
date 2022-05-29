@@ -21,8 +21,17 @@ BATCH_SIZE = {"distilgpt2": 64,
 class ScoreComputer():
     def __init__(self, comet_instance):
         self.device = comet_instance.device
-        self.model = comet_instance.model
-        self.tokenizer = comet_instance.tokenizer
+        tokenizer = comet_instance.tokenizer
+        if tokenizer.pad_token is None:
+            if tokenizer.eos_token is not None:
+                tokenizer.pad_token = tokenizer.eos_token
+            else:
+                tokenizer.pad_token = tokenizer.eos_token = 0
+        model = comet_instance.model
+        model.to(self.device)
+        model.eval()        
+        self.model = model
+        self.tokenizer = tokenizer
 
     def get_lm_score(self, batch, pad_token_id):
         """
@@ -43,12 +52,12 @@ class ScoreComputer():
 
         return loss
 
-    def generate_score(self, context_with_choice_and_clarifications):
+    def get_score(self, context_with_choice_and_clarifications):
         # context_with_choice_and_clarifications = " ".join((context,relation,answer))
-        tokenized = [self.tokenizer(context_with_choice_and_clarifications, return_tensors="pt", padding=True)["input_ids"].to(self.device)]
+        tokenized = self.tokenizer(context_with_choice_and_clarifications, return_tensors="pt", padding=True)["input_ids"].to(self.device)
         # batch_size = BATCH_SIZE[self.lm]
         # num_batches = int(math.ceil(len(tokenized[0]) / batch_size))
-        return self.get_lm_score(self.model, tokenized, self.tokenizer.pad_token_id)
+        return self.get_lm_score(tokenized, self.tokenizer.pad_token_id)
 
 def main():
     pass

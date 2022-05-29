@@ -230,13 +230,11 @@ def get_clarifications_socialiqa(ex, nlp, comet_model):
 
     if relation is not None:
         outputs = {relation: comet_model.predict(context, relation, num_beams=5)}
-
         prefix = CATEGORY_TO_PREFIX[relation]
         for out_event in outputs[relation]:
             if out_event != "none" and out_event != "":
                 if not out_event.lower().startswith("person") and not out_event.lower().startswith("other"):
                     out_event = " ".join((prefix, out_event))
-
                 out_event = re.sub("personx", personx, out_event, flags=re.I)
                 out_event = re.sub("person x", personx, out_event, flags=re.I)
                 out_event = re.sub("persony", "others", out_event, flags=re.I)
