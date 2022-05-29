@@ -197,6 +197,7 @@ def main():
     parser.add_argument("--dataset", default="socialiqa", type=str, required=True, help="Jsonl file")
     parser.add_argument("--out_dir", default=None, type=str, required=True, help="Out directory for the predictions")
     parser.add_argument("--device", default=0, type=int, required=False, help="GPU device")
+    parser.add_argument("--lhops", default=2, type=int, required=False, help="Number of hops")
 
     args = parser.parse_args()
     logger.info(args)
@@ -220,11 +221,12 @@ def main():
         with open(args.file) as f_in:
             for line in tqdm.tqdm(f_in):
                 fields = json.loads(line.strip())
-
-                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer)
-                #print(gold_label,predicted_label)
-
+                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer, lhops = args.lhops)
                 gold.append(gold_label)
+                predictions.append(predicted_label)
+
+
+                #print(gold_label,predicted_label)
                 """
                 # Tokenize and pad
                 tokenized = [tokenizer(per_clar, return_tensors="pt", padding=True)["input_ids"].to(device)
@@ -246,8 +248,8 @@ def main():
                 prediction = int(np.argmin(per_choice_score))
                 fields["prediction"] = prediction
                 """
-                predictions.append(predicted_label)
-                f_out.write(json.dumps(fields) + "\n")
+                
+                #f_out.write(json.dumps(fields) + "\n")
 
         # Don't report accuracy if we don't have the labels
         if None not in gold:
