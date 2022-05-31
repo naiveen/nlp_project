@@ -187,9 +187,10 @@ class CommonsenseqaInstanceReader(InstanceReader):
         return context, question, label, choices, clarifications, context_with_choice_and_clarifications
 
 
-INSTANCE_READERS = {"socialiqa": SocialIQAInstanceReader}
-
-
+INSTANCE_READERS = {"socialiqa": SocialIQAInstanceReader,
+                    "winogrande": WinograndeInstanceReader,
+                    "commonsenseqa":CommonsenseqaInstanceReader}
+                    
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--lm", default="comet", type=str, required=False, help="language model to use")
