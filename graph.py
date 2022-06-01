@@ -69,7 +69,7 @@ question_to_comet_relation = {
 
 def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,scoreComputer, lhops =2, num_beams = 3):
 	# context = fields["context"]
-	context, _, _, _,_, _ = instance_reader.fields_to_instance(fields)
+	context, _, _, _,_, _,_ = instance_reader.fields_to_instance(fields)
 
 	fields_= fields.copy()
 	context_list = [context]
@@ -87,7 +87,7 @@ def init_graph(fields, instance_reader,scoreComputer, lhops):
 	G = nx.DiGraph()
 	# context, _, _, _,_, _ = instance_reader.fields_to_instance(fields)
 	# context  = fields["context"]
-	context, question, label, choices, clarifications, context_with_choice_and_clarifications, answers = instance_reader.fields_to_instance(fields)
+	context, question, label, choices, clarifications, context_with_choice_and_clarifications,answers= instance_reader.fields_to_instance(fields)
 
 	G.add_nodes_from([context])
 	fields["clarifications"] =[]
