@@ -18,6 +18,8 @@ from score import ScoreComputer
 import warnings
 warnings.filterwarnings('ignore')
 
+from generate_clarifications_from_comet import get_clarifications_socialiqa, get_clarifications_winogrande, get_clarifications_commonsenseqa
+
 import spacy
 from graph import *
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
@@ -190,6 +192,11 @@ class CommonsenseqaInstanceReader(InstanceReader):
 INSTANCE_READERS = {"socialiqa": SocialIQAInstanceReader,
                     "winogrande": WinograndeInstanceReader,
                     "commonsenseqa":CommonsenseqaInstanceReader}
+
+CLARIFICATION_FUNCTION = {
+                    "socialiqa": get_clarifications_socialiqa,
+                    "winogrande": get_clarifications_winogrande,
+                    "commonsenseqa":get_clarifications_commonsenseqa}
                     
 def main():
     parser = argparse.ArgumentParser()
@@ -222,7 +229,7 @@ def main():
         with open(args.file) as f_in:
             for line in tqdm.tqdm(f_in):
                 fields = json.loads(line.strip())
-                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer, lhops = args.lhops)
+                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer,get_clarification_func=CLARIFICATION_FUNCTION[args.dataset] lhops = args.lhops)
                 gold.append(gold_label)
                 predictions.append(predicted_label)
 

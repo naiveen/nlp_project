@@ -67,7 +67,7 @@ question_to_comet_relation = {
 
 
 
-def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,scoreComputer, lhops =2, num_beams = 3):
+def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,scoreComputer, get_clarification_func, lhops =2, num_beams = 3):
 	context = fields["context"]
 	fields_= fields.copy()
 	context_list = [context]
@@ -76,7 +76,7 @@ def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,score
 	#plt.savefig("init.png")
 	fields_= fields.copy()
 	for _ in range(lhops-1):
-		context_list = extend_graph(G, fields_, context_list,instance_reader, comet_model,nlp,scoreComputer, num_beams)
+		context_list = extend_graph(G, fields_, context_list,instance_reader, comet_model,nlp,scoreComputer, get_clarification_func, num_beams)
 	longest_path = nx.dag_longest_path(G)
 	predicted_label = answers.index(longest_path[-1])
 	return G, gold_label,predicted_label
@@ -95,12 +95,12 @@ def init_graph(fields, instance_reader,scoreComputer, lhops):
 
 	return G, label, answers
 
-def extend_graph(G, fields,context_list,instance_reader,comet_model,nlp,scoreComputer, num_beams=3):
+def extend_graph(G, fields,context_list,instance_reader,comet_model,nlp,scoreComputer,get_clarification_func,num_beams=3):
 	outputs =[]
 	for context in context_list:
 		fields_ = fields.copy()
 		fields_["context"] = context
-		clarifications = get_clarifications_socialiqa(fields_, nlp, comet_model)
+		clarifications = get_clarification_func(fields_, nlp, comet_model)
 		for clarification in clarifications:
 			fields_["clarifications"] = [clarification]
 			_, question, _, _, _, context_with_choice_and_clarifications, answers = \
