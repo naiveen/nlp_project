@@ -21,7 +21,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
 logger = logging.getLogger(__name__)
 
 
-from generate_clarifications_from_comet import get_clarifications_socialiqa, get_personx
+from generate_clarifications_from_comet import get_clarifications_socialiqa, get_clarifications_winogrande, get_personx
 
 CATEGORY_TO_QUESTION = {"xIntent": "What was the intention of PersonX?",
 						"xNeed": "Before that, what did PersonX need?",
@@ -68,7 +68,9 @@ question_to_comet_relation = {
 
 
 def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,scoreComputer, lhops =2, num_beams = 3):
-	context = fields["context"]
+	# context = fields["context"]
+	context, _, _, _,_, _ = instance_reader.fields_to_instance(fields)
+
 	fields_= fields.copy()
 	context_list = [context]
 	G, gold_label, answers= init_graph(fields_,instance_reader,scoreComputer,lhops )
@@ -83,11 +85,13 @@ def create_graph_get_prediction(fields , instance_reader, comet_model, nlp,score
 
 def init_graph(fields, instance_reader,scoreComputer, lhops):
 	G = nx.DiGraph()
-	context  = fields["context"]
+	# context, _, _, _,_, _ = instance_reader.fields_to_instance(fields)
+	# context  = fields["context"]
+	context, question, label, choices, clarifications, context_with_choice_and_clarifications, answers = instance_reader.fields_to_instance(fields)
+
 	G.add_nodes_from([context])
 	fields["clarifications"] =[]
-	context, question, label, choices, clarifications, context_with_choice_and_clarifications, answers = \
-					instance_reader.fields_to_instance(fields)
+
 	G.add_nodes_from(answers)
 	for i, answer in enumerate(answers):
 		G.add_edge(context,answer, weight = scoreComputer.get_score(context_with_choice_and_clarifications[i]))
@@ -100,7 +104,7 @@ def extend_graph(G, fields,context_list,instance_reader,comet_model,nlp,scoreCom
 	for context in context_list:
 		fields_ = fields.copy()
 		fields_["context"] = context
-		clarifications = get_clarifications_socialiqa(fields_, nlp, comet_model)
+		clarifications = get_clarifications_winogrande(fields_, nlp, comet_model)
 		for clarification in clarifications:
 			fields_["clarifications"] = [clarification]
 			_, question, _, _, _, context_with_choice_and_clarifications, answers = \
