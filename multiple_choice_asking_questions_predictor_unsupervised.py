@@ -229,7 +229,7 @@ def main():
         with open(args.file) as f_in:
             for line in tqdm.tqdm(f_in):
                 fields = json.loads(line.strip())
-                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer,get_clarification_func=CLARIFICATION_FUNCTION[args.dataset] lhops = args.lhops)
+                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer,get_clarification_func=CLARIFICATION_FUNCTION[args.dataset], lhops = args.lhops)
                 gold.append(gold_label)
                 predictions.append(predicted_label)
 
