@@ -8,7 +8,7 @@ import logging
 import argparse
 
 from comet2.comet_model import PretrainedCometModel
-
+from score import ScoreComputer
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                     datefmt = '%m/%d/%Y %H:%M:%S',
@@ -66,6 +66,7 @@ def main():
     else:
         comet_model = PretrainedCometModel(device=args.device)
 
+    scoreComputer = ScoreComputer(comet_model)
     nlp = spacy.load('en_core_web_sm')
     get_clarifications = {"copa": get_clarifications_copa,
                           "winogrande": get_clarifications_winogrande,
@@ -78,7 +79,7 @@ def main():
         with open(args.out_file, "w") as f_out:
             data_examples = [json.loads(line.strip()) for line in f_in]
             for ex in tqdm.tqdm(data_examples):
-                ex["clarifications"] = get_clarifications(ex, nlp, comet_model)
+                ex["clarifications"] = get_clarifications(ex, nlp, comet_model, scoreComputer)
                 f_out.write(json.dumps(ex) + "\n")
 
 
@@ -256,7 +257,7 @@ def get_clarifications_socialiqa(ex, nlp, comet_model, score_computer):
                 context_with_inference = " ".join(context, out_event)
                 score = score_computer.get_score(context_with_inference)
                 # inferences.append((question, out_event))
-                inferences.append((relation, out_event, score))
+                inferences.append((relation, out_event, score, context_with_inference))
 
     return inferences
 
