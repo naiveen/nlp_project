@@ -1,3 +1,4 @@
+from calendar import c
 import re
 import tqdm
 import json
@@ -203,7 +204,7 @@ def get_clarifications_mctaco(ex, nlp, comet_model):
     return curr_events
 
 
-def get_clarifications_socialiqa(ex, nlp, comet_model):
+def get_clarifications_socialiqa(ex, nlp, comet_model, score_computer):
     """
     Generate clarifications for the SocialIQA dataset
     :param ex: a dictionary with the SocialIQA instance
@@ -251,8 +252,11 @@ def get_clarifications_socialiqa(ex, nlp, comet_model):
                 out_event = re.sub("person x", personx, out_event, flags=re.I)
                 out_event = re.sub("persony", "others", out_event, flags=re.I)
                 out_event = re.sub("person y", "others", out_event, flags=re.I)
-
-                inferences.append((question, out_event))
+                
+                context_with_inference = " ".join(context, out_event)
+                score = score_computer.get_score(context_with_inference)
+                # inferences.append((question, out_event))
+                inferences.append((relation, out_event, score))
 
     return inferences
 
