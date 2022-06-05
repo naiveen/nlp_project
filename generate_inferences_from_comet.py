@@ -230,7 +230,7 @@ def get_clarifications_socialiqa_(context, nlp, comet_model, score_computer):
                 out_event = re.sub("persony", "others", out_event, flags=re.I)
                 out_event = re.sub("person y", "others", out_event, flags=re.I)
                 
-                context_with_inference = " ".join(context, out_event)
+                context_with_inference = " ".join([context, out_event])
                 score = score_computer.get_score(context_with_inference)
                 # inferences.append((question, out_event))
                 inferences.append((relation, out_event, score, context_with_inference))

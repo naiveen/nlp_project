@@ -65,13 +65,34 @@ question_to_comet_relation = {
 		  "What will happen to [NAME] next?": "xEffect"
 	}
 
+QUESTION_TO_ANSWER_PREFIX = {
+              "What will (.*) want to do next?": r"As a result, [SUBJ] wanted to",
+              "What will (.*) want to do after?": r"As a result, [SUBJ] wanted to",
+              "How would (.*) feel afterwards?": r"As a result, [SUBJ] felt",
+              "How would (.*) feel as a result?": r"As a result, [SUBJ] felt",
+              "What will (.*) do next?": r"[SUBJ] then",
+              "How would (.*) feel after?": r"[SUBJ] then",
+              "How would you describe (.*)?": r"[SUBJ] is seen as",
+              "What kind of person is (.*)?": r"[SUBJ] is seen as",
+              "How would you describe (.*) as a person?": r"[SUBJ] is seen as",
+              "Why did (.*) do that?": r"Before, [SUBJ] wanted",
+              "Why did (.*) do this?": r"Before, [SUBJ] wanted",
+              "Why did (.*) want to do this?": r"Before, [SUBJ] wanted",
+              "What does (.*) need to do beforehand?": r"Before, [SUBJ] needed to",
+              "What does (.*) need to do before?": r"Before, [SUBJ] needed to",
+              "What does (.*) need to do before this?": r"Before, [SUBJ] needed to",
+              "What did (.*) need to do before this?": r"Before, [SUBJ] needed to",
+              "What will happen to (.*)?": r"[SUBJ] then",
+              "What will happen to (.*) next?": r"[SUBJ] then"
+        }
+
 
 class KnowledgeGraph():
 	def __init__(self, nlp, comet_model, scoreComputer, lhops):
 		self.G = nx.DiGraph()
 		self.lhops = lhops
 		self.comet_model = comet_model
-		self.scoreComputer = scoreComputer,
+		self.scoreComputer = scoreComputer
 		self.nlp = nlp
 		pass
 
@@ -85,18 +106,19 @@ class KnowledgeGraph():
 				output.append(out_event)
 				for answer in answers:
 					inference_answer = " ".join([out_event, answer])
-					answer_score = self.scoreComputer(inference_answer)
-					self.add_edge(out_event, answer, weight = answer_score)
+					answer_score = self.scoreComputer.get_score(inference_answer)
+					self.G.add_edge(out_event, answer, weight = answer_score)
 		return output
 
 	def get_prediction(self, ex):
 		context_list = [ex['context']]
-		answers = ex['answers']
+		# answers = ex['answers']
+		answers = []
 		choices = [ex['answerA'], ex['answerB'], ex['answerC']]
 		choices = [c + "." if not c.endswith(".") else c for c in choices]
 		question = ex['question']
 		answer_prefix = ""
-		for template, ans_prefix in self.QUESTION_TO_ANSWER_PREFIX.items():
+		for template, ans_prefix in QUESTION_TO_ANSWER_PREFIX.items():
 			m = re.match(template, question)
 			if m is not None:
 				answer_prefix = ans_prefix.replace("[SUBJ]", m.group(1))
@@ -104,14 +126,18 @@ class KnowledgeGraph():
 
 		if answer_prefix == "": 
 			answer_prefix = question.replace("?", "is")
-			answers = choices.copy()
-			answers = [
+		
+		answers = choices.copy()
+		answers = [
             " ".join((answer_prefix, choice[0].lower() + choice[1:])).replace(
                 "?", "").replace("wanted to wanted to", "wanted to").replace(
                 "needed to needed to", "needed to").replace("to to", "to") for choice in choices]
 		
+		print("answers: ",answers)
+
 		self.G.add_node(context_list[0])
 
+		print("answers: ", answers)
 		for i in range(self.lhops):
 			context_list = extend_graph(context_list, answers)
 		

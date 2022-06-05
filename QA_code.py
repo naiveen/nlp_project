@@ -227,8 +227,9 @@ def main():
             for ex in tqdm.tqdm(data_examples):
                 kg = KnowledgeGraph(nlp, comet_model, scoreComputer, lhops=args.lhops)
                 # single instance of dataset
-                predicted_label = kg.get_prediction(ex)
-                pass
+                G, predicted_label = kg.get_prediction(ex)
+    
+    return
 
 
 def get_lm_score(model, batch, pad_token_id):
