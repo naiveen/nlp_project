@@ -233,6 +233,8 @@ def main():
 
     # Load the dataset original dataset without any clarifications
 
+    gold = []
+    predictions = []
     with open(args.file) as f_in:
         with open(args.out_file, "w") as f_out:
             data_examples = [json.loads(line.strip()) for line in f_in]
@@ -240,10 +242,15 @@ def main():
                 kg = KnowledgeGraph(nlp, comet_model, scoreComputer, lhops=args.lhops)
                 # single instance of dataset
                 processed_input = preprocess_socialiqa(ex)
-                print("processed_input: ",processed_input)
+                # print("processed_input: ",processed_input)
                 G, predicted_answer = kg.get_prediction(processed_input)
-                print("predicted_answer: ", predicted_answer)
-                print("groung_truth: ", processed_input['ground_truth'])
+                # print("predicted_answer: ", predicted_answer)
+                # print("groung_truth: ", processed_input['ground_truth'])
+                gold.append(processed_input['ground_truth'])
+                predictions.append(predicted_answer)
+        if None not in gold:
+            accuracy = accuracy_score(gold, predictions) * 100
+            print(f"Accuracy: {accuracy:.3f}")
     return
 
 def init_comet_model(model_name: str,device: torch.device):
