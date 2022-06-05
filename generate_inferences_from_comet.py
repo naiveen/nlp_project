@@ -219,7 +219,7 @@ def get_clarifications_socialiqa_(context, nlp, comet_model, score_computer):
     personx, _ = get_personx(nlp, context)
 
     for relation in ATOMIC_RELATION_TYPES:
-        outputs = {relation: comet_model.predict(context, relation, num_beams=5)}
+        outputs = {relation: comet_model.predict(context, relation, num_beams=1)}
         prefix = CATEGORY_TO_PREFIX[relation]
         for out_event in outputs[relation]:
             if out_event != "none" and out_event != "":

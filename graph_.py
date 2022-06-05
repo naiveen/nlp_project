@@ -99,53 +99,62 @@ class KnowledgeGraph():
 	def extend_graph(self, context_list, answers):
 		output = []
 		for context in context_list:
+			# print("context: ", context)
 			inferences = get_clarifications_socialiqa_(context, self.nlp, self.comet_model, self.scoreComputer)
 			for relation, out_event, score, _  in inferences:
+				# print("relation: ", relation)
+				# print("inference/edge: ", out_event)
+				# print("edge score: ",score)
 				self.G.add_node(out_event)
 				self.G.add_edge(context, out_event, weight = score)
 				output.append(out_event)
 				for answer in answers:
 					inference_answer = " ".join([out_event, answer])
+					# print("answer_edge: ", inference_answer)
 					answer_score = self.scoreComputer.get_score(inference_answer)
+					# print("edge_score: ", answer_score)
 					self.G.add_edge(out_event, answer, weight = answer_score)
 		return output
 
-	def get_prediction(self, ex):
-		context_list = [ex['context']]
-		# answers = ex['answers']
-		answers = []
-		choices = [ex['answerA'], ex['answerB'], ex['answerC']]
-		choices = [c + "." if not c.endswith(".") else c for c in choices]
-		question = ex['question']
-		answer_prefix = ""
-		for template, ans_prefix in QUESTION_TO_ANSWER_PREFIX.items():
-			m = re.match(template, question)
-			if m is not None:
-				answer_prefix = ans_prefix.replace("[SUBJ]", m.group(1))
-				break
+	def get_prediction(self, input):
+		# context_list = [ex['context']]
+		# # answers = ex['answers']
+		# answers = []
+		# choices = [ex['answerA'], ex['answerB'], ex['answerC']]
+		# choices = [c + "." if not c.endswith(".") else c for c in choices]
+		# question = ex['question']
+		# answer_prefix = ""
+		# for template, ans_prefix in QUESTION_TO_ANSWER_PREFIX.items():
+		# 	m = re.match(template, question)
+		# 	if m is not None:
+		# 		answer_prefix = ans_prefix.replace("[SUBJ]", m.group(1))
+		# 		break
 
-		if answer_prefix == "": 
-			answer_prefix = question.replace("?", "is")
+		# if answer_prefix == "": 
+		# 	answer_prefix = question.replace("?", "is")
 		
-		answers = choices.copy()
-		answers = [
-            " ".join((answer_prefix, choice[0].lower() + choice[1:])).replace(
-                "?", "").replace("wanted to wanted to", "wanted to").replace(
-                "needed to needed to", "needed to").replace("to to", "to") for choice in choices]
-		
-		print("answers: ",answers)
+		# answers = choices.copy()
+		# answers = [
+        #     " ".join((answer_prefix, choice[0].lower() + choice[1:])).replace(
+        #         "?", "").replace("wanted to wanted to", "wanted to").replace(
+        #         "needed to needed to", "needed to").replace("to to", "to") for choice in choices]
+
+		context_list = input['context_list']
+		answers_list = input['answers_list']
 
 		self.G.add_node(context_list[0])
 
-		print("answers: ", answers)
+		# print("answers: ", answers)
 		for i in range(self.lhops):
-			context_list = extend_graph(context_list, answers)
+			# print("lhop: ", i)
+			context_list = extend_graph(context_list, answers_list)
 		
 		longest_path = nx.dag_longest_path(self.G)
 
-		predicted_label = answers.index(longest_path[-1])
-
-		return self.G, predicted_label
+		# predicted_label = answers.index(longest_path[-1])
+		predicted_answer = longest_path[-1]
+		# return self.G, predicted_label
+		return self.G, predicted_answer
 
 
 
