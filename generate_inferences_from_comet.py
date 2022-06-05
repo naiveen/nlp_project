@@ -204,6 +204,38 @@ def get_clarifications_mctaco(ex, nlp, comet_model):
 
     return curr_events
 
+def get_clarifications_socialiqa_(context, nlp, comet_model, score_computer):
+    """
+    Generate clarifications for the SocialIQA dataset
+    :param ex: a dictionary with the SocialIQA instance
+    :param nlp: Spacy NLP
+    :param comet_model: the COMET model objects
+    :return: a list of (question, answer) tuples
+    """
+    #context = ex['context']
+    #question = ex['question']
+
+    inferences = []
+    personx, _ = get_personx(nlp, context)
+
+    for relation in ATOMIC_RELATION_TYPES:
+        outputs = {relation: comet_model.predict(context, relation, num_beams=5)}
+        prefix = CATEGORY_TO_PREFIX[relation]
+        for out_event in outputs[relation]:
+            if out_event != "none" and out_event != "":
+                if not out_event.lower().startswith("person") and not out_event.lower().startswith("other"):
+                    out_event = " ".join((prefix, out_event))
+                out_event = re.sub("personx", personx, out_event, flags=re.I)
+                out_event = re.sub("person x", personx, out_event, flags=re.I)
+                out_event = re.sub("persony", "others", out_event, flags=re.I)
+                out_event = re.sub("person y", "others", out_event, flags=re.I)
+                
+                context_with_inference = " ".join(context, out_event)
+                score = score_computer.get_score(context_with_inference)
+                # inferences.append((question, out_event))
+                inferences.append((relation, out_event, score, context_with_inference))
+
+    return inferences
 
 def get_clarifications_socialiqa(ex, nlp, comet_model, score_computer):
     """

@@ -14,11 +14,12 @@ from sklearn.metrics import accuracy_score
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from comet2.comet_model import PretrainedCometModel
 from score import ScoreComputer
+from graph_ import KnowledgeGraph
 
 import warnings
 warnings.filterwarnings('ignore')
 
-from generate_clarifications_from_comet import get_clarifications_socialiqa, get_clarifications_winogrande, get_clarifications_commonsenseqa
+from generate_inferences_from_comet import get_clarifications_socialiqa, get_clarifications_winogrande, get_clarifications_commonsenseqa
 
 import spacy
 from graph import *
@@ -214,67 +215,20 @@ def main():
     model, tokenizer = init_model(args.lm,args.device)
     comet_model = PretrainedCometModel(device=args.device)
 
+    nlp = spacy.load('en_core_web_sm')
+    scoreComputer = ScoreComputer(comet_model)
     device = torch.device(f'cuda:{args.device}') if args.device >= 0 else torch.device("cpu")
 
     # Load the dataset original dataset without any clarifications
-    
+
     with open(args.dataset) as f_in:
         with open(args.out_file, "w") as f_out:
             data_examples = [json.loads(line.strip()) for line in f_in]
             for ex in tqdm.tqdm(data_examples):
+                kg = KnowledgeGraph(nlp, comet_model, scoreComputer, lhops=args.lhops)
                 # single instance of dataset
-                # init graph
-                # extend graph
-                # predict output
+                predicted_label = kg.get_prediction(ex)
                 pass
-
-
-    instance_reader = INSTANCE_READERS[args.dataset]()
-    set_name = os.path.basename(args.file).replace(".jsonl", "")
-    out_file = os.path.join(args.out_dir, f"{args.lm}_{set_name}_predictions.jsonl")
-    gold = []
-    predictions = []
-    nlp = spacy.load('en_core_web_sm')
-    scoreComputer = ScoreComputer(comet_model)
-        # Predict instances
-    with open(out_file, "w") as f_out:
-        with open(args.file) as f_in:
-            for line in tqdm.tqdm(f_in):
-                fields = json.loads(line.strip())
-                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer,get_clarification_func=CLARIFICATION_FUNCTION[args.dataset], lhops = args.lhops)
-                gold.append(gold_label)
-                predictions.append(predicted_label)
-
-
-                #print(gold_label,predicted_label)
-                """
-                # Tokenize and pad
-                tokenized = [tokenizer(per_clar, return_tensors="pt", padding=True)["input_ids"].to(device)
-                             for per_clar in context_with_choice_and_clarifications]
-
-                # Compute in batches***
-                batch_size = BATCH_SIZE[args.lm]
-                num_choices = len(tokenized)
-                num_batches = int(math.ceil(len(tokenized[0]) / batch_size))
-                per_choice_score = [1000] * num_choices
-
-                for batch_index in range(0, num_batches):
-                    curr_batch = [tokenized[i][batch_index*batch_size:(batch_index+1)*batch_size]
-                                  for i in range(num_choices)]
-                    curr_scores = [get_lm_score(model, clars_choice, tokenizer.pad_token_id)
-                                   for clars_choice in curr_batch]
-                    per_choice_score = [min(per_choice_score[i], curr_scores[i]) for i in range(num_choices)]
-
-                prediction = int(np.argmin(per_choice_score))
-                fields["prediction"] = prediction
-                """
-                
-                #f_out.write(json.dumps(fields) + "\n")
-
-        # Don't report accuracy if we don't have the labels
-        if None not in gold:
-            accuracy = accuracy_score(gold, predictions)
-            print(f"Accuracy: {accuracy:.3f}")
 
 
 def get_lm_score(model, batch, pad_token_id):
