@@ -147,7 +147,7 @@ class KnowledgeGraph():
 		# print("answers: ", answers)
 		for i in range(self.lhops):
 			# print("lhop: ", i)
-			context_list = extend_graph(context_list, answers_list)
+			context_list = self.extend_graph(context_list, answers_list)
 		
 		longest_path = nx.dag_longest_path(self.G)
 

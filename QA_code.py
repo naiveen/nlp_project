@@ -120,9 +120,9 @@ CLARIFICATION_FUNCTION = {
                     "winogrande": get_clarifications_winogrande,
                     "commonsenseqa":get_clarifications_commonsenseqa}
 
-QUESTION_TO_ANSWER_PREFIX = {
-        "What will (.*) want to do next?": r"As a result, [SUBJ] wanted to",
-        "What will (.*) want to do after?": r"As a result, [SUBJ] wanted to",
+QUESTION_TO_ANSWER_PREFIX_OLD = {
+        "What will (.*) want to do next?": r"[SUBJ] wanted to",
+        "What will (.*) want to do after?": r"[SUBJ] wanted to",
         "How would (.*) feel afterwards?": r"As a result, [SUBJ] felt",
         "How would (.*) feel as a result?": r"As a result, [SUBJ] felt",
         "What will (.*) do next?": r"[SUBJ] then",
@@ -141,6 +141,48 @@ QUESTION_TO_ANSWER_PREFIX = {
         "What will happen to (.*) next?": r"[SUBJ] then"
     }
 
+QUESTION_TO_ANSWER_PREFIX = {
+        "What will (.*) want to do next?": r"After, [SUBJ] will want to",
+        "What will (.*) want to do after?": r"After, [SUBJ] will want to",
+        "How would (.*) feel afterwards?": r"[SUBJ] feels",
+        "How would (.*) feel as a result?": r"[SUBJ] feel",
+        "What will (.*) do next?": r"After, [SUBJ] will",
+        "How would (.*) feel after?": r"[SUBJ] feel",
+        "How would you describe (.*)?": r"[SUBJ] is",
+        "What kind of person is (.*)?": r"[SUBJ] is",
+        "How would you describe (.*) as a person?": r"[SUBJ] is",
+        "Why did (.*) do that?": r"[SUBJ] did that because",
+        "Why did (.*) do this?": r"[SUBJ] did this because",
+        "Why did (.*) want to do this?": r"[SUBJ] wanted to this because",
+        "What does (.*) need to do beforehand?": r"Beforehand, [SUBJ] needs to",
+        "What does (.*) need to do before?": r"Before, [SUBJ] needs to",
+        "What does (.*) need to do before this?": r"Before this, [SUBJ] needs to",
+        "What did (.*) need to do before this?": r"Before this, [SUBJ] needed to",
+        "What will happen to (.*)?": r"The effect on [SUBJ] will be",
+        "What will happen to (.*) next?": r"The effect on [SUBJ] will be"
+    }
+
+QUESTION_TO_ANSWER_PREFIX = {
+        "What will (.*) want to do next?": r"[SUBJ] wanted to",
+        "What will (.*) want to do after?": r"[SUBJ] wanted to",
+        "How would (.*) feel afterwards?": r"As a result, [SUBJ] felt",
+        "How would (.*) feel as a result?": r"As a result, [SUBJ] felt",
+        "What will (.*) do next?": r"[SUBJ] then",
+        "How would (.*) feel after?": r"[SUBJ] then",
+        "How would you describe (.*)?": r"[SUBJ] is seen as",
+        "What kind of person is (.*)?": r"[SUBJ] is seen as",
+        "How would you describe (.*) as a person?": r"[SUBJ] is seen as",
+        "Why did (.*) do that?": r"Before, [SUBJ] wanted",
+        "Why did (.*) do this?": r"Before, [SUBJ] wanted",
+        "Why did (.*) want to do this?": r"Before, [SUBJ] wanted",
+        "What does (.*) need to do beforehand?": r"Before, [SUBJ] needed to",
+        "What does (.*) need to do before?": r"Before, [SUBJ] needed to",
+        "What does (.*) need to do before this?": r"Before, [SUBJ] needed to",
+        "What did (.*) need to do before this?": r"Before, [SUBJ] needed to",
+        "What will happen to (.*)?": r"[SUBJ] then",
+        "What will happen to (.*) next?": r"[SUBJ] then"
+    }
+    
 def preprocess_socialiqa(ex):
     processed_output = {"context_list": [], "answers_list":[], "ground_truth":""}
     processed_output['context_list'].append(ex['context'])
