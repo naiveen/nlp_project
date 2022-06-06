@@ -95,25 +95,31 @@ class KnowledgeGraph():
 		self.scoreComputer = scoreComputer
 		self.nlp = nlp
 		pass
+	
+	@staticmethod
+	def get_graph_node(hops,val):
+		return (hops,val)
 
-	def extend_graph(self, context_list, answers):
+
+	def extend_graph(self, hops, context_node_list, answers_node_list):
 		output = []
-		for context in context_list:
-			# print("context: ", context)
-			inferences = get_clarifications_socialiqa_(context, self.nlp, self.comet_model, self.scoreComputer)
+		for context_node in context_node_list:
+			# print("context: ", context_node[1])
+			inferences = get_clarifications_socialiqa_(context_node[1], self.nlp, self.comet_model, self.scoreComputer)
 			for relation, out_event, score, _  in inferences:
 				# print("relation: ", relation)
 				# print("inference/edge: ", out_event)
 				# print("edge score: ",score)
-				self.G.add_node(out_event)
-				self.G.add_edge(context, out_event, weight = score)
-				output.append(out_event)
-				for answer in answers:
-					inference_answer = " ".join([out_event, answer])
+				out_event_node=self.get_graph_node(hops,out_event)
+				self.G.add_node(out_event_node)
+				self.G.add_edge(context_node, out_event_node, weight = score)
+				output.append(out_event_node)
+				for answer_node in answers_node_list:
+					inference_answer = " ".join([out_event, answer_node[1]])
 					# print("answer_edge: ", inference_answer)
 					answer_score = self.scoreComputer.get_score(inference_answer)
 					# print("edge_score: ", answer_score)
-					self.G.add_edge(out_event, answer, weight = answer_score)
+					self.G.add_edge(out_event_node, answer_node, weight = answer_score)
 		return output
 
 	def get_prediction(self, input):
@@ -142,17 +148,20 @@ class KnowledgeGraph():
 		context_list = input['context_list']
 		answers_list = input['answers_list']
 
-		self.G.add_node(context_list[0])
+		context_node_list = [self.get_graph_node(0,context_list[0])]
+		answers_node_list = [self.get_graph_node(self.lhops,answer) for answer in answers_list]
+
+		self.G.add_node(context_node_list[0])
+		self.G.add_nodes_from(answers_node_list)
 
 		# print("answers: ", answers)
-		for i in range(self.lhops):
-			# print("lhop: ", i)
-			context_list = self.extend_graph(context_list, answers_list)
+		for i in range(self.lhops-1):
+			context_node_list = self.extend_graph(i+1,context_node_list, answers_node_list)
 		
 		longest_path = nx.dag_longest_path(self.G)
 
 		# predicted_label = answers.index(longest_path[-1])
-		predicted_answer = longest_path[-1]
+		predicted_answer = longest_path[-1][1]
 		# return self.G, predicted_label
 		return self.G, predicted_answer
 
