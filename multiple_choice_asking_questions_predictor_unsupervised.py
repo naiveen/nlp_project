@@ -137,7 +137,7 @@ class WinograndeInstanceReader(InstanceReader):
 
         label = fields['answer']
         choices = [fields['option1'], fields['option2']]
-
+        
         if ("None", "None") in fields['clarifications']:
             fields['clarifications'].append(("None", "None"))
 
@@ -152,11 +152,12 @@ class WinograndeInstanceReader(InstanceReader):
     def fields_to_instance(self, fields):
         context, question, label, choices, clarifications = self.to_uniform_fields(fields)
         context_with_clarifications = [f"{context} {clarification}" for clarification in clarifications]
+        answers = choices.copy()
         context_with_choice_and_clarifications = [
             [context_with_clar.replace("_", choice).strip() for context_with_clar in context_with_clarifications]
              for choice in choices]
 
-        return context, question, label, choices, clarifications, context_with_choice_and_clarifications
+        return context, question, label, choices, clarifications, context_with_choice_and_clarifications, answers
 
 
 class CommonsenseqaInstanceReader(InstanceReader):
