@@ -221,6 +221,9 @@ def get_clarifications_socialiqa_(context, nlp, comet_model, score_computer):
     for relation in ATOMIC_RELATION_TYPES:
         outputs = {relation: comet_model.predict(context, relation, num_beams=1)}
         prefix = CATEGORY_TO_PREFIX[relation]
+        if "none" in outputs:
+            print("One of the generations is None")
+            continue
         for out_event in outputs[relation]:
             if out_event != "none" and out_event != "":
                 if not out_event.lower().startswith("person") and not out_event.lower().startswith("other"):
