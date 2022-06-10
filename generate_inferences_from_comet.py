@@ -219,7 +219,7 @@ def get_clarifications_socialiqa_(context, nlp, comet_model, score_computer):
     personx, _ = get_personx(nlp, context)
 
     for relation in ATOMIC_RELATION_TYPES:
-        outputs = {relation: comet_model.predict(context, relation, num_beams=1)}
+        outputs = {relation: comet_model.predict(context, relation, num_beams=5)}
         prefix = CATEGORY_TO_PREFIX[relation]
         if "none" in outputs:
             print("One of the generations is None")
