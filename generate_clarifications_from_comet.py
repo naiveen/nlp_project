@@ -67,6 +67,8 @@ def main():
             data_examples = [json.loads(line.strip()) for line in f_in]
             for ex in tqdm.tqdm(data_examples):
                 ex["clarifications"] = get_clarifications(ex, nlp, comet_model)
+                if args.dataset_type == "commonsenseqa":
+                    ex["sentence"] = ''
                 f_out.write(json.dumps(ex) + "\n")
 
 

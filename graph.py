@@ -93,13 +93,13 @@ def init_graph(fields, instance_reader,scoreComputer, lhops, hops):
 	else:
 		context = fields["sentence"]
 	context_node_list = [get_graph_node(hops,context)]
-	G.add_nodes_from(context_node_list)
+	G.add_nodes_from(context_node_list[0])
 	fields["clarifications"] =[]
 	context, question, label, choices, clarifications, context_with_choice_and_clarifications, answers = \
 					instance_reader.fields_to_instance(fields)
 	G.add_nodes_from(answers)
 	for i, answer in enumerate(answers):
-		G.add_edge(context_node_list,answer, weight = scoreComputer.get_score(context_with_choice_and_clarifications[i]))
+		G.add_edge(context_node_list[0],answer, weight = scoreComputer.get_score(context_with_choice_and_clarifications[i]))
 	
 
 	return G, label, answers
