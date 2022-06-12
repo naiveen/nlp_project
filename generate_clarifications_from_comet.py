@@ -263,7 +263,6 @@ def get_clarifications_storycs(ex, nlp, comet_model):
 
     clarifications = []
     full_context=" ".join([context,sentence,question])
-    # personx, _ = get_personx(nlp, context)
     if relation is not None:
         outputs = {relation: comet_model.predict(full_context, relation, num_beams=5)}
         prefix = CATEGORY_TO_PREFIX[relation]
