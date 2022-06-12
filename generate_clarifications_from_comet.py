@@ -313,42 +313,6 @@ def get_clarifications_winogrande(ex, nlp, comet_model):
 
     return curr_events
 
-
-def get_clarifications_winogrande(ex, nlp, comet_model):
-    """
-    Generate clarifications for the Winogrande dataset
-    :param ex: a dictionary with the Winogrande instance
-    :param nlp: Spacy NLP
-    :param comet_model: the COMET model objects
-    :return: a list of (question, answer) tuples
-    """
-    personx, persony = ex['option1'], ex['option2']
-
-    # Only extract relations for people
-    if personx[0] != personx[0].upper() or persony[0] != persony[0].upper():
-        return []
-
-    input_event = ex["sentence"]
-    outputs = {category: comet_model.predict(input_event, category, num_beams=5) for category in comet_model.categories}
-
-    curr_events = []
-    for category, prefix in CATEGORY_TO_PREFIX.items():
-        for out_event in outputs[category]:
-            if out_event != "none" and out_event != "":
-                if not out_event.lower().startswith("person") and not out_event.lower().startswith("other"):
-                    out_event = " ".join((prefix, out_event))
-
-                out_event = re.sub("personx", personx, out_event, flags=re.I)
-                out_event = re.sub("person x", personx, out_event, flags=re.I)
-                out_event = re.sub("persony", persony, out_event, flags=re.I)
-                out_event = re.sub("person y", persony, out_event, flags=re.I)
-
-                question = CATEGORY_TO_QUESTION[category].replace("PersonX", personx)
-                curr_events.append((question, out_event))
-
-    return curr_events
-
-
 def get_clarifications_copa(ex, nlp, comet_model):
     """
     Generate clarifications for the COPA dataset
