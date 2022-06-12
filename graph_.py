@@ -1,3 +1,4 @@
+from generate_clarifications_from_comet import get_clarifications_storycs
 import networkx as nx
 import re
 import tqdm
@@ -105,7 +106,7 @@ class KnowledgeGraph():
 		output = []
 		for context_node in context_node_list:
 			# print("context: ", context_node[1])
-			inferences = get_clarifications_socialiqa_(context_node[1], self.nlp, self.comet_model, self.scoreComputer)
+			inferences = get_clarifications_storycs(context_node[1], self.nlp, self.comet_model, self.scoreComputer)
 			for relation, out_event, score, _  in inferences:
 				# print("relation: ", relation)
 				# print("inference/edge: ", out_event)

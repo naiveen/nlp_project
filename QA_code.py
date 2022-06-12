@@ -216,8 +216,6 @@ def preprocess_storycs(ex):
     processed_output['context_list'].append(ex['context'])
     choices = emotions
     choices = [c + "." if not c.endswith(".") else c for c in choices]
-    question = ex['question']
-
     answers = choices.copy()
     processed_output['answers_list'] = answers
     processed_output['ground_truth'] = ex['label']
@@ -256,10 +254,7 @@ def main():
                 # single instance of dataset
                 preprocess_func=preprocess_func_dict.get(args.dataset,preprocess_socialiqa)
                 processed_input = preprocess_func(ex)
-                # print("processed_input: ",processed_input)
                 G, predicted_answer = kg.get_prediction(processed_input)
-                # print("predicted_answer: ", predicted_answer)
-                # print("groung_truth: ", processed_input['ground_truth'])
                 gold.append(processed_input['ground_truth'])
                 predictions.append(predicted_answer)
         if None not in gold:
