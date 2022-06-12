@@ -14,7 +14,10 @@ from sklearn.metrics import accuracy_score
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from comet2.comet_model import PretrainedCometModel
 from score import ScoreComputer
+from networkx.drawing.nx_agraph import graphviz_layout, to_agraph
 
+from PIL import Image
+from io import BytesIO     
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -85,10 +88,8 @@ class SocialIQAInstanceReader(InstanceReader):
         label = fields['correct']
         choices = [fields['answerA'], fields['answerB'], fields['answerC']]
         choices = [c + "." if not c.endswith(".") else c for c in choices]
-
         if ("None", "None") in fields['clarifications']:
             fields['clarifications'].append(("None", "None"))
-
         clarifications = [c[1] if len(c[1].split()) > 1 else " ".join((c)) for c in fields['clarifications']]
         clarifications = [c[0].upper() + c[1:] for c in clarifications] + [""]
 
@@ -207,7 +208,7 @@ def main():
     parser.add_argument("--out_dir", default=None, type=str, required=True, help="Out directory for the predictions")
     parser.add_argument("--device", default=0, type=int, required=False, help="GPU device")
     parser.add_argument("--lhops", default=2, type=int, required=False, help="Number of hops")
-
+    parser.add_argument("--graph_save", default=0, type=int, required=False, help="Number of hops")
     args = parser.parse_args()
     logger.info(args)
 
@@ -225,44 +226,35 @@ def main():
     predictions = []
     nlp = spacy.load('en_core_web_sm')
     scoreComputer = ScoreComputer(comet_model)
-        # Predict instances
+    relation_dict= {}
+    re_acc_dict={}
     with open(out_file, "w") as f_out:
         with open(args.file) as f_in:
             for line in tqdm.tqdm(f_in):
                 fields = json.loads(line.strip())
-                G, gold_label, predicted_label= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer,get_clarification_func=CLARIFICATION_FUNCTION[args.dataset], lhops = args.lhops)
+                G, gold_label, predicted_label, relation= create_graph_get_prediction(fields,instance_reader, comet_model, nlp,scoreComputer,get_clarification_func=CLARIFICATION_FUNCTION[args.dataset], lhops = args.lhops)
                 gold.append(gold_label)
                 predictions.append(predicted_label)
+                if relation not in relation_dict:
+                    relation_dict[relation] =1
+                    if gold_label==predicted_label:
+                        re_acc_dict[relation] = 1
+                    else:
+                        re_acc_dict[relation]=0
+                else:
+                    relation_dict[relation] +=1
+                    if gold_label==predicted_label:
+                        re_acc_dict[relation] += 1
 
+                if(args.graph_save==1):
+                    pyz = to_agraph(G)
+                    img = pyz.draw(prog= "dot" ,format='png')
+                    image = Image.open(BytesIO(img))
+                    image.save("graph.png")
 
-                #print(gold_label,predicted_label)
-                """
-                # Tokenize and pad
-                tokenized = [tokenizer(per_clar, return_tensors="pt", padding=True)["input_ids"].to(device)
-                             for per_clar in context_with_choice_and_clarifications]
-
-                # Compute in batches***
-                batch_size = BATCH_SIZE[args.lm]
-                num_choices = len(tokenized)
-                num_batches = int(math.ceil(len(tokenized[0]) / batch_size))
-                per_choice_score = [1000] * num_choices
-
-                for batch_index in range(0, num_batches):
-                    curr_batch = [tokenized[i][batch_index*batch_size:(batch_index+1)*batch_size]
-                                  for i in range(num_choices)]
-                    curr_scores = [get_lm_score(model, clars_choice, tokenizer.pad_token_id)
-                                   for clars_choice in curr_batch]
-                    per_choice_score = [min(per_choice_score[i], curr_scores[i]) for i in range(num_choices)]
-
-                prediction = int(np.argmin(per_choice_score))
-                fields["prediction"] = prediction
-                """
-                
-                #f_out.write(json.dumps(fields) + "\n")
-
-        # Don't report accuracy if we don't have the labels
         if None not in gold:
             accuracy = accuracy_score(gold, predictions)
+            print(relation_dict, re_acc_dict, relation_dict.keys(), relation_dict.values(), re_acc_dict.values())
             print(f"Accuracy: {accuracy:.3f}")
 
 
