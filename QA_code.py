@@ -210,6 +210,19 @@ def preprocess_socialiqa(ex):
 
     return processed_output
 
+def preprocess_storycs(ex):
+    emotions = ["joy", "trust", "fear", "surprise", "sadness", "disgust", "anger", "anticipation"]
+    processed_output = {"context_list": [], "answers_list":[], "ground_truth":""}
+    processed_output['context_list'].append(ex['context'])
+    choices = emotions
+    choices = [c + "." if not c.endswith(".") else c for c in choices]
+    question = ex['question']
+
+    answers = choices.copy()
+    processed_output['answers_list'] = answers
+    processed_output['ground_truth'] = ex['label']
+
+    return processed_output
 
 def main():
     parser = argparse.ArgumentParser()
@@ -232,7 +245,7 @@ def main():
     device = torch.device(f'cuda:{args.device}') if args.device >= 0 else torch.device("cpu")
 
     # Load the dataset original dataset without any clarifications
-
+    preprocess_func_dict={"storycs": preprocess_storycs}
     gold = []
     predictions = []
     with open(args.file) as f_in:
@@ -241,7 +254,8 @@ def main():
             for ex in tqdm.tqdm(data_examples):
                 kg = KnowledgeGraph(nlp, comet_model, scoreComputer, lhops=args.lhops)
                 # single instance of dataset
-                processed_input = preprocess_socialiqa(ex)
+                preprocess_func=preprocess_func_dict.get(args.dataset,default=preprocess_socialiqa)
+                processed_input = preprocess_func(ex)
                 # print("processed_input: ",processed_input)
                 G, predicted_answer = kg.get_prediction(processed_input)
                 # print("predicted_answer: ", predicted_answer)
