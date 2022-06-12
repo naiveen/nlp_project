@@ -254,7 +254,7 @@ def main():
             for ex in tqdm.tqdm(data_examples):
                 kg = KnowledgeGraph(nlp, comet_model, scoreComputer, lhops=args.lhops)
                 # single instance of dataset
-                preprocess_func=preprocess_func_dict.get(args.dataset,default=preprocess_socialiqa)
+                preprocess_func=preprocess_func_dict.get(args.dataset,preprocess_socialiqa)
                 processed_input = preprocess_func(ex)
                 # print("processed_input: ",processed_input)
                 G, predicted_answer = kg.get_prediction(processed_input)
