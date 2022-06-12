@@ -1,4 +1,3 @@
-from generate_clarifications_from_comet import get_clarifications_storycs
 import networkx as nx
 import re
 import tqdm
@@ -22,7 +21,7 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
 logger = logging.getLogger(__name__)
 
 
-from generate_inferences_from_comet import get_clarifications_socialiqa_, get_clarifications_socialiqa, get_personx
+from generate_inferences_from_comet import get_clarifications_socialiqa_, get_clarifications_socialiqa, get_personx, get_clarifications_winogrande_, get_clarifications_commonsenseqa_
 
 CATEGORY_TO_QUESTION = {"xIntent": "What was the intention of PersonX?",
 						"xNeed": "Before that, what did PersonX need?",
@@ -102,11 +101,13 @@ class KnowledgeGraph():
 		return (hops,val)
 
 
-	def extend_graph(self, hops, context_node_list, answers_node_list):
+	def extend_graph(self, hops, context_node_list, answers_node_list, personx, persony):
 		output = []
 		for context_node in context_node_list:
 			# print("context: ", context_node[1])
-			inferences = get_clarifications_storycs(context_node[1], self.nlp, self.comet_model, self.scoreComputer)
+			# inferences = get_clarifications_winogrande_(context_node[1], self.nlp, self.comet_model, self.scoreComputer, personx, persony)
+			inferences = get_clarifications_winogrande_(context_node[1], self.nlp, self.comet_model, self.scoreComputer, personx, persony)
+			# inferences = get_clarifications_commonsenseqa_(context_node[1], self.nlp, self.comet_model, self.scoreComputer, personx, persony)
 			for relation, out_event, score, _  in inferences:
 				# print("relation: ", relation)
 				# print("inference/edge: ", out_event)
@@ -116,7 +117,7 @@ class KnowledgeGraph():
 				self.G.add_edge(context_node, out_event_node, weight = score)
 				output.append(out_event_node)
 				for answer_node in answers_node_list:
-					inference_answer = " ".join([out_event, answer_node[1]])
+					inference_answer = " ".join([answer_node[1],out_event])
 					# print("answer_edge: ", inference_answer)
 					answer_score = self.scoreComputer.get_score(inference_answer)
 					# print("edge_score: ", answer_score)
@@ -124,31 +125,11 @@ class KnowledgeGraph():
 		return output
 
 	def get_prediction(self, input):
-		# context_list = [ex['context']]
-		# # answers = ex['answers']
-		# answers = []
-		# choices = [ex['answerA'], ex['answerB'], ex['answerC']]
-		# choices = [c + "." if not c.endswith(".") else c for c in choices]
-		# question = ex['question']
-		# answer_prefix = ""
-		# for template, ans_prefix in QUESTION_TO_ANSWER_PREFIX.items():
-		# 	m = re.match(template, question)
-		# 	if m is not None:
-		# 		answer_prefix = ans_prefix.replace("[SUBJ]", m.group(1))
-		# 		break
-
-		# if answer_prefix == "": 
-		# 	answer_prefix = question.replace("?", "is")
-		
-		# answers = choices.copy()
-		# answers = [
-        #     " ".join((answer_prefix, choice[0].lower() + choice[1:])).replace(
-        #         "?", "").replace("wanted to wanted to", "wanted to").replace(
-        #         "needed to needed to", "needed to").replace("to to", "to") for choice in choices]
 
 		context_list = input['context_list']
 		answers_list = input['answers_list']
-
+		personx = input['option1']
+		persony = input['option2']
 		context_node_list = [self.get_graph_node(0,context_list[0])]
 		answers_node_list = [self.get_graph_node(self.lhops,answer) for answer in answers_list]
 
@@ -157,7 +138,8 @@ class KnowledgeGraph():
 
 		# print("answers: ", answers)
 		for i in range(self.lhops-1):
-			context_node_list = self.extend_graph(i+1,context_node_list, answers_node_list)
+			print("i:", i)
+			context_node_list = self.extend_graph(i+1,context_node_list, answers_node_list, personx, persony)
 		
 		longest_path = nx.dag_longest_path(self.G)
 

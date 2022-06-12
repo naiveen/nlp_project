@@ -183,6 +183,47 @@ QUESTION_TO_ANSWER_PREFIX = {
         "What will happen to (.*) next?": r"[SUBJ] then"
     }
     
+def preprocess_commonsenseqa(ex):
+    processed_output = {"context_list": [], "answers_list":[], "ground_truth":""}
+
+    context = ex['question']['stem']
+    label = ['A','B','C','D','E'].index(ex['answerKey']) if "answerKey" in ex else None
+    choices = [c['text'] for c in ex['question']['choices']]
+    question = ''
+
+    processed_output['context_list'].append(context)
+    
+    answers = [f"{context} [choice]" for choice in choices]
+    
+    processed_output['answers_list'] = answers
+
+    processed_output['ground_truth'] = answers[label]
+    processed_output['option1'] = ""
+    processed_output['option2'] = ""
+
+    return processed_output
+
+
+def preprocess_winogrande(ex):
+    processed_output = {"context_list": [], "answers_list":[], "ground_truth":""}
+    context = ex['sentence']
+    if not context.endswith("."):
+        context += "."
+    processed_output['context_list'].append(context)
+    choices = [ex['option1'], ex['option2']]
+    question = ''
+    label = ex['answer']
+    label = int(label) - 1
+    context_with_choice = [context.replace("_", choice).strip() for choice in choices]
+    processed_output['answers_list'] = context_with_choice
+
+    processed_output['ground_truth'] = context_with_choice[label]
+    processed_output['option1'] = ex['option1']
+    processed_output['option2'] = ex['option2']
+
+    return processed_output
+
+
 def preprocess_socialiqa(ex):
     processed_output = {"context_list": [], "answers_list":[], "ground_truth":""}
     processed_output['context_list'].append(ex['context'])
@@ -243,7 +284,10 @@ def main():
     device = torch.device(f'cuda:{args.device}') if args.device >= 0 else torch.device("cpu")
 
     # Load the dataset original dataset without any clarifications
-    preprocess_func_dict={"storycs": preprocess_storycs}
+    preprocess_func_dict={"storycs": preprocess_storycs,
+                          "commonsenseqa": preprocess_commonsenseqa,
+                          "winogrande": preprocess_winogrande,
+                            }
     gold = []
     predictions = []
     with open(args.file) as f_in:

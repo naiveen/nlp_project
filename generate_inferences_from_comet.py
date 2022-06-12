@@ -239,6 +239,62 @@ def get_clarifications_socialiqa_(context, nlp, comet_model, score_computer):
                 inferences.append((relation, out_event, score, context_with_inference))
 
     return inferences
+
+def get_clarifications_commonsenseqa_(context, nlp, comet_model, score_computer, personx, persony):
+    """
+    Generate clarifications for the CommonSenseQA dataset
+    :param ex: a dictionary with the CommonSenseQA instance
+    :param nlp: Spacy NLP
+    :param comet_model: the COMET model
+    :return: a list of (question, answer) tuples
+    """
+    CATEGORY_TO_QUESTION = {"xIntent": "What was their intention?",
+                            "xNeed": "Before that, what did they need?",
+                            "oEffect": "What happens to others as a result?",
+                            "oReact": "What do others feel as a result?",
+                            "oWant": "What do others want as a result?",
+                            "xEffect": "What happens to them as a result?",
+                            "xReact": "What do they feel as a result?",
+                            "xWant": "What do they want as a result?",
+                            "xAttr": "How are they seen?"}
+
+    CATEGORY_TO_PREFIX = {"xIntent": "Because they wanted",
+                          "xNeed": "Before, they needed",
+                          "oEffect": "Others then",
+                          "oReact": "As a result, others feel",
+                          "oWant": "As a result, others want",
+                          "xEffect": "They then",
+                          "xReact": "As a result, they feel",
+                          "xWant": "As a result, they want",
+                          "xAttr": "They are seen seen as"}
+
+    # context = ex['question']['stem']
+    personx,_ = get_personx(nlp, context, use_chunk=False)
+
+    if len(personx) == 0:
+        return []
+
+    outputs = {category: comet_model.predict(context, category, num_beams=5) for category in comet_model.categories}
+
+    inferences = []
+    for relation, prefix in CATEGORY_TO_PREFIX.items():
+        for out_event in outputs[relation]:
+            if out_event != "none" and out_event != "":
+                if not out_event.lower().startswith("person") and not out_event.lower().startswith("other"):
+                    out_event = " ".join((prefix, out_event))
+
+                out_event = re.sub("personx", '', out_event, flags=re.I)
+                out_event = re.sub("person x", '', out_event, flags=re.I)
+                out_event = re.sub("persony", "others", out_event, flags=re.I)
+                out_event = re.sub("person y", "others", out_event, flags=re.I)
+
+                question = CATEGORY_TO_QUESTION[relation].replace("PersonX", personx)
+                context_with_inference = " ".join([context, out_event])
+                score = score_computer.get_score(context_with_inference)
+                # inferences.append((question, out_event))
+                inferences.append((relation, out_event, score, context_with_inference))
+    return inferences
+
 def get_clarifications_storycs(ex, nlp, comet_model,score_computer):
     """
     Generate clarifications for the SocialIQA dataset
@@ -329,6 +385,43 @@ def get_clarifications_socialiqa(ex, nlp, comet_model, score_computer):
                 # inferences.append((question, out_event))
                 inferences.append((relation, out_event, score, context_with_inference))
 
+    return inferences
+
+def get_clarifications_winogrande_(ex, nlp, comet_model, score_computer, personx, persony):
+    """
+    Generate clarifications for the Winogrande dataset
+    :param ex: a dictionary with the Winogrande instance
+    :param nlp: Spacy NLP
+    :param comet_model: the COMET model objects
+    :return: a list of (question, answer) tuples
+    """
+    # personx, persony = ex['option1'], ex['option2']
+
+    # Only extract relations for people
+    if personx[0] != personx[0].upper() or persony[0] != persony[0].upper():
+        return []
+
+    input_event = ex["sentence"]
+    outputs = {category: comet_model.predict(input_event, category, num_beams=5) for category in comet_model.categories}
+
+    inferences = []
+    for category, prefix in CATEGORY_TO_PREFIX.items():
+        for out_event in outputs[category]:
+            if out_event != "none" and out_event != "":
+                if not out_event.lower().startswith("person") and not out_event.lower().startswith("other"):
+                    out_event = " ".join((prefix, out_event))
+
+                out_event = re.sub("personx", personx, out_event, flags=re.I)
+                out_event = re.sub("person x", personx, out_event, flags=re.I)
+                out_event = re.sub("persony", persony, out_event, flags=re.I)
+                out_event = re.sub("person y", persony, out_event, flags=re.I)
+
+                question = CATEGORY_TO_QUESTION[category].replace("PersonX", personx)
+                # curr_events.append((question, out_event))
+                context_with_inference = " ".join([input_event,out_event])
+                score = score_computer.get_score(context_with_inference)
+                # inferences.append((question, out_event))
+                inferences.append((category, out_event, score, context_with_inference))
     return inferences
 
 
