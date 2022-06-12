@@ -314,7 +314,7 @@ def get_relation_socialiqa(ex, nlp, comet_model):
     personx, _ = get_personx(nlp, context)
     relation = question_to_comet_relation.get(re.sub(personx, "[NAME]", question, flags=re.I), None)
     return relation
-
+  
 def get_clarifications_winogrande(ex, nlp, comet_model):
     """
     Generate clarifications for the Winogrande dataset
