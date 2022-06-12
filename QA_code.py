@@ -15,8 +15,11 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from comet2.comet_model import PretrainedCometModel
 from score import ScoreComputer
 from graph_ import KnowledgeGraph
-
+from networkx.drawing.nx_agraph import graphviz_layout, to_agraph
+from PIL import Image
+from io import BytesIO 
 import warnings
+
 warnings.filterwarnings('ignore')
 
 from generate_inferences_from_comet import get_clarifications_socialiqa, get_clarifications_winogrande, get_clarifications_commonsenseqa
@@ -213,12 +216,19 @@ def preprocess_socialiqa(ex):
 def preprocess_storycs(ex):
     emotions = ["joy", "trust", "fear", "surprise", "sadness", "disgust", "anger", "anticipation"]
     processed_output = {"context_list": [], "answers_list":[], "ground_truth":""}
-    processed_output['context_list'].append(ex['context'])
+    if(ex['context']):
+        full=" ".join([ex['context'],ex['sentence']] )
+        full="*".join( [full,ex['person']])
+        processed_output['context_list'].append(full)
+    else:
+        processed_output['context_list'].append("*".join([ex['sentence'],ex['person']])) 
+    
     choices = emotions
-    choices = [c + "." if not c.endswith(".") else c for c in choices]
+    # choices = [c + "." if not c.endswith(".") else c for c in choices]
     answers = choices.copy()
     processed_output['answers_list'] = answers
     processed_output['ground_truth'] = ex['label']
+    processed_output['person'] = ex['person']
 
     return processed_output
 
@@ -254,9 +264,15 @@ def main():
                 # single instance of dataset
                 preprocess_func=preprocess_func_dict.get(args.dataset,preprocess_socialiqa)
                 processed_input = preprocess_func(ex)
+                # print(processed_input)
                 G, predicted_answer = kg.get_prediction(processed_input)
                 gold.append(processed_input['ground_truth'])
                 predictions.append(predicted_answer)
+                # pyz = to_agraph(G)
+                # img = pyz.draw(prog= "dot" ,format='png')
+                # image = Image.open(BytesIO(img))
+                # image.save("graph.png")
+                # print('Saving graph')
         if None not in gold:
             accuracy = accuracy_score(gold, predictions) * 100
             print(f"Accuracy: {accuracy:.3f}")
