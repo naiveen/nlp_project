@@ -3,7 +3,7 @@ import json
 import regex as re
 
 
-df = pandas.read_csv("data/storycs/pro_data_test.csv",)
+df = pandas.read_csv("data/storycs/pro_data_dev.csv",)
 
 file_to_write = ""
 # print (df.columns)
@@ -20,7 +20,7 @@ def get_emotion_label(emotion_votes):
     return max_emo
 
 
-with open("data/storycs/test.jsonl","w") as outfile:
+with open("data/storycs/dev.jsonl","w") as outfile:
     for example in result_list:
         labels=[]
         chars_list=example['char'].strip('][').split(',')
@@ -29,18 +29,16 @@ with open("data/storycs/test.jsonl","w") as outfile:
 
         # print(example['char_plutchik'])
         char_vote_list=json.loads(example['char_plutchik'])
-        example['labels']=[]
+        for entry in entries_to_remove:
+            example.pop(entry)
+
         for char_votes in char_vote_list:
             # print(char_votes)
             for char in char_votes:
                 emotion_votes=char_votes[char]
                 emotion_label=get_emotion_label(emotion_votes)
                 if(emotion_label==''): continue
-                example['labels'].append({char:emotion_label})
-        if len(example['labels'])==0:
-            continue
-        for entry in entries_to_remove:
-            example.pop(entry)
+                example['label']={char:emotion_label}
+                example['person']=char
+                outfile.write(json.dumps(example)+'\n')        
 
-
-        outfile.write(json.dumps(example)+'\n')
