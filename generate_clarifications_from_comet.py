@@ -247,6 +247,43 @@ def get_clarifications_socialiqa(ex, nlp, comet_model):
     return clarifications
 
 
+def get_relation_socialiqa(ex, nlp, comet_model):
+    """
+    Generate clarifications for the SocialIQA dataset
+    :param ex: a dictionary with the SocialIQA instance
+    :param nlp: Spacy NLP
+    :param comet_model: the COMET model objects
+    :return: a list of (question, answer) tuples
+    """
+    context = ex['context']
+    question = ex['question']
+
+    question_to_comet_relation = {
+          "What will [NAME] want to do next?": "xWant",
+          "What will [NAME] want to do after?": "xWant",
+          "How would [NAME] feel afterwards?": "xReact",
+          "How would [NAME] feel as a result?": "xReact",
+          "What will [NAME] do next?": "xReact",
+          "How would [NAME] feel after?": "xReact",
+          "How would you describe [NAME]?": "xAttr",
+          "What kind of person is [NAME]?": "xAttr",
+          "How would you describe [NAME] as a person?": "xAttr",
+          "Why did [NAME] do that?": "xIntent",
+          "Why did [NAME] do this?": "xIntent",
+          "Why did [NAME] want to do this?": "xIntent",
+          "What does [NAME] need to do beforehand?": "xNeed",
+          "What does [NAME] need to do before?": "xNeed",
+          "What does [NAME] need to do before this?": "xNeed",
+          "What did [NAME] need to do before this?": "xNeed",
+          "What will happen to [NAME]?": "xEffect",
+          "What will happen to [NAME] next?": "xEffect"
+    }
+
+    clarifications = []
+    personx, _ = get_personx(nlp, context)
+    relation = question_to_comet_relation.get(re.sub(personx, "[NAME]", question, flags=re.I), None)
+    return relation
+
 def get_clarifications_winogrande(ex, nlp, comet_model):
     """
     Generate clarifications for the Winogrande dataset
