@@ -21,7 +21,8 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s -   %(message
 logger = logging.getLogger(__name__)
 
 
-from generate_inferences_from_comet import get_clarifications_socialiqa_, get_clarifications_socialiqa, get_personx, get_clarifications_winogrande_, get_clarifications_commonsenseqa_
+
+from generate_inferences_from_comet import get_clarifications_storycs, get_clarifications_socialiqa_, get_clarifications_socialiqa, get_personx, get_clarifications_winogrande_, get_clarifications_commonsenseqa_
 
 CATEGORY_TO_QUESTION = {"xIntent": "What was the intention of PersonX?",
 						"xNeed": "Before that, what did PersonX need?",
@@ -109,6 +110,7 @@ class KnowledgeGraph():
 			inferences = get_clarifications_winogrande_(context_node[1], self.nlp, self.comet_model, self.scoreComputer, personx, persony)
 			# inferences = get_clarifications_commonsenseqa_(context_node[1], self.nlp, self.comet_model, self.scoreComputer, personx, persony)
 			for relation, out_event, score, _  in inferences:
+				# print("out_event {}".format(out_event))
 				# print("relation: ", relation)
 				# print("inference/edge: ", out_event)
 				# print("edge score: ",score)
@@ -122,6 +124,7 @@ class KnowledgeGraph():
 					answer_score = self.scoreComputer.get_score(inference_answer)
 					# print("edge_score: ", answer_score)
 					self.G.add_edge(out_event_node, answer_node, weight = answer_score)
+					# print("adding edge between {} {}".format(out_event_node[1],answer_node[1]))
 		return output
 
 	def get_prediction(self, input):
